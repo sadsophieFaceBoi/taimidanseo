@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/common/">
+    <Project Path="common/Common.Base/Common.Base.csproj" />
+    <Project Path="common/Common.Users/Common.Users.csproj" />
+  </Folder>
+</Solution>

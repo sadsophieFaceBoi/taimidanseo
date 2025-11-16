@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Users\\Common.Users.csproj": {}
+    "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Base\\Common.Base.csproj": {}
   },
   "projects": {
-    "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Users\\Common.Users.csproj": {
+    "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Base\\Common.Base.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Users\\Common.Users.csproj",
-        "projectName": "Common.Users",
-        "projectPath": "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Users\\Common.Users.csproj",
+        "projectUniqueName": "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Base\\Common.Base.csproj",
+        "projectName": "Common.Base",
+        "projectPath": "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Base\\Common.Base.csproj",
         "packagesPath": "C:\\Users\\andre\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Users\\obj\\",
+        "outputPath": "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Base\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\andre\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -43,12 +43,6 @@
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
-          "dependencies": {
-            "MongoDB.Driver": {
-              "target": "Package",
-              "version": "[3.5.0, )"
-            }
-          },
           "imports": [
             "net461",
             "net462",
