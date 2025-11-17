@@ -36,7 +36,7 @@ public class MongoUserAuthService : IUserAuthService
             byEmail = await _userService.GetUserByEmailAsync(providerEmail);
             if (byEmail != null)
             {
-                var link = new LinkedAccount
+                var link = new LinkedAccount(provider, providerUserId)
                 {
                     ProviderEmail = providerEmail,
                     LinkedAt = DateTime.UtcNow,

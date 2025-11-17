@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "V1xJj6z09b0=",
+  "dgSpecHash": "kWz3WwkBQc8=",
   "success": true,
   "projectFilePath": "C:\\Users\\andre\\source\\repos\\taimidanseo\\backend\\common\\Common.Base\\Common.Base.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\andre\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.22\\microsoft.netcore.app.ref.8.0.22.nupkg.sha512",
+    "C:\\Users\\andre\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.22\\microsoft.windowsdesktop.app.ref.8.0.22.nupkg.sha512",
+    "C:\\Users\\andre\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.22\\microsoft.aspnetcore.app.ref.8.0.22.nupkg.sha512"
+  ],
   "logs": []
 }

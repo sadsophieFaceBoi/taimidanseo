@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json.schemastore.org/launch.json",
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Functions: Start (Core Tools)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build:AuthFunctionApp",
+      "program": "func",
+      "args": [
+        "start"
+      ],
+      "cwd": "${workspaceFolder}/backend/functions/AuthFunctionApp",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": ".NET Launch (AuthFunctionApp)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build:AuthFunctionApp",
+      "program": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "backend/functions/AuthFunctionApp/AuthFunctionApp.csproj"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Attach to .NET Functions",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:azureFunctions.pickProcess}"
+    }
+  ]
+}

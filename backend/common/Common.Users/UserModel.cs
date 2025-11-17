@@ -70,6 +70,14 @@ public class LinkedAccount
     public string? RefreshTokenEncrypted { get; set; }
 
     public DateTime? AccessTokenExpiresAt { get; set; }
+
+    public LinkedAccount() { }
+
+    public LinkedAccount(AuthProvider provider, string providerUserId)
+    {
+        Provider = provider;
+        ProviderUserId = providerUserId;
+    }
 }
 
 public enum AuthProvider

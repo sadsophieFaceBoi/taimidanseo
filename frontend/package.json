@@ -1,0 +1,13 @@
+{
+  "name": "taimidanseo-frontend",
+  "private": true,
+  "workspaces": [
+    "web-app",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "npm run -w @taimidanseo/auth-client build && npm run -w web-app build",
+    "dev": "npm run -w web-app dev",
+    "clean": "npm run -w @taimidanseo/auth-client clean || echo done"
+  }
+}

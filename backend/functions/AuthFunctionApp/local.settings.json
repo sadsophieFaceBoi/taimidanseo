@@ -1,0 +1,16 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "Mongo__ConnectionString": "mongodb://localhost:27017",
+    "Mongo__Database": "taimidanseo",
+    "Mongo__UsersCollection": "users",
+    "Auth__Jwt__SigningKey": "dev-super-secret-change-me-32bytes-min",
+    "Auth__Jwt__Issuer": "taimidanseo.local",
+    "Auth__Jwt__Audience": "taimidanseo.clients",
+    "Auth__Jwt__LifetimeMinutes": "60",
+    "Auth__Refresh__LifetimeDays": "30",
+    "Auth__Microsoft__AllowedTenants": ""
+  }
+}
