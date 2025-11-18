@@ -12,5 +12,9 @@
     "Auth__Jwt__LifetimeMinutes": "60",
     "Auth__Refresh__LifetimeDays": "30",
     "Auth__Microsoft__AllowedTenants": ""
+  },
+  "Host": {
+    "CORS": "http://localhost:3000,http://localhost:3001",
+    "CORSCredentials": true
   }
 }

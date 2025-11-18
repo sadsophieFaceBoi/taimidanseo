@@ -37,7 +37,10 @@ export class AuthClient {
   constructor(opts: AuthClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/?$/, "");
     this.storage = opts.storage ?? defaultStorage();
-    this.fetchImpl = opts.fetchImpl ?? fetch;
+    // Bind fetch to the correct global to avoid "Illegal invocation" in some environments
+    const globalObj: any = typeof window !== "undefined" ? window : globalThis;
+    const chosenFetch: any = (opts.fetchImpl ?? globalObj.fetch);
+    this.fetchImpl = chosenFetch.bind(globalObj) as typeof fetch;
   }
 
   get tokens() { return this.storage.get() ?? {}; }
@@ -108,5 +111,9 @@ export class AuthClient {
 
   async signInWithMicrosoftIdToken(idToken: string, clientId?: string) {
     return this.signIn({ provider: "Microsoft", idToken, microsoftClientId: clientId, clientId });
+  }
+
+  async signInWithFacebook(userId: string, email?: string) {
+    return this.signIn({ provider: "Facebook", providerUserId: userId, providerEmail: email });
   }
 }

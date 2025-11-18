@@ -20,10 +20,19 @@ public class TokenService : ITokenService
 
     public TokenService(IConfiguration config)
     {
-        _signingKey = config["Auth__Jwt__SigningKey"] ?? string.Empty;
-        _issuer = config["Auth__Jwt__Issuer"] ?? string.Empty;
-        _audience = config["Auth__Jwt__Audience"] ?? string.Empty;
-        _lifetimeMinutes = int.TryParse(config["Auth__Jwt__LifetimeMinutes"], out var m) ? m : 60;
+        static string? Get(IConfiguration cfg, string key)
+        {
+            // Try common variants to support env vars and local.settings.json (Values section)
+            return cfg[key]
+                ?? cfg[$"Values:{key}"]
+                ?? cfg[key.Replace("__", ":")]
+                ?? cfg[$"Values:{key.Replace("__", ":")}"];
+        }
+
+        _signingKey = Get(config, "Auth__Jwt__SigningKey") ?? string.Empty;
+        _issuer = Get(config, "Auth__Jwt__Issuer") ?? string.Empty;
+        _audience = Get(config, "Auth__Jwt__Audience") ?? string.Empty;
+        _lifetimeMinutes = int.TryParse(Get(config, "Auth__Jwt__LifetimeMinutes"), out var m) ? m : 60;
 
         if (string.IsNullOrWhiteSpace(_signingKey) || _signingKey.Length < 16)
         {

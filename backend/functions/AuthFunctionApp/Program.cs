@@ -17,9 +17,14 @@ var host = new HostBuilder()
     {
         var configuration = context.Configuration;
 
-        var mongoConnection = configuration["Mongo__ConnectionString"] ?? "";
-        var mongoDatabase = configuration["Mongo__Database"] ?? "";
-        var usersCollection = configuration["Mongo__UsersCollection"] ?? "users";
+        // Prefer colon-delimited keys (standard for .NET configuration),
+        // but fall back to double-underscore env var style if present.
+        string? GetConfig(string colonKey, string underscoreKey) =>
+            configuration[colonKey] ?? configuration[underscoreKey];
+
+        var mongoConnection = GetConfig("Mongo:ConnectionString", "Mongo__ConnectionString") ?? string.Empty;
+        var mongoDatabase = GetConfig("Mongo:Database", "Mongo__Database") ?? string.Empty;
+        var usersCollection = GetConfig("Mongo:UsersCollection", "Mongo__UsersCollection") ?? "users";
 
         if (string.IsNullOrWhiteSpace(mongoConnection) || string.IsNullOrWhiteSpace(mongoDatabase))
         {
