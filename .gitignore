@@ -6,7 +6,7 @@ node_modules/
 .next/
 dist/
 coverage/
-
+local.settings.json
 # env
 .env
 .env.*
