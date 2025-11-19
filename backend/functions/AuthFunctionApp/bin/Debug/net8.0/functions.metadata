@@ -79,5 +79,32 @@
         "direction": "Out"
       }
     ]
+  },
+  {
+    "name": "AuthProviders",
+    "scriptFile": "AuthFunctionApp.dll",
+    "entryPoint": "ProvidersFunctions.GetProviders",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "auth/providers",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
   }
 ]

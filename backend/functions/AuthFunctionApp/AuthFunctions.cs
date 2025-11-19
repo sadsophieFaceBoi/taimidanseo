@@ -15,13 +15,16 @@ public partial class AuthFunctions
     private readonly IMicrosoftIdTokenValidator _microsoftValidator;
     private readonly IRefreshTokenService _refreshTokens;
 
+    private readonly AuthProviderSettings _providerSettings;
+
     public AuthFunctions(
         IUserAuthService authService,
         IUserService userService,
         ITokenService tokenService,
         IGoogleIdTokenValidator googleValidator,
         IMicrosoftIdTokenValidator microsoftValidator,
-        IRefreshTokenService refreshTokens)
+        IRefreshTokenService refreshTokens,
+        AuthProviderSettings providerSettings)
     {
         _authService = authService;
         _userService = userService;
@@ -29,6 +32,7 @@ public partial class AuthFunctions
         _googleValidator = googleValidator;
         _microsoftValidator = microsoftValidator;
         _refreshTokens = refreshTokens;
+        _providerSettings = providerSettings;
     }
 
     [Function("SignIn")] 
@@ -57,11 +61,26 @@ public partial class AuthFunctions
         string providerUserId = request.ProviderUserId;
         string? providerEmail = request.ProviderEmail;
 
-        // If Google and idToken provided, validate and extract user info
+        // If Google and idToken provided, validate and extract user info; enforce expected audience if configured
         if (provider == AuthProvider.Google && !string.IsNullOrWhiteSpace(request.IdToken))
         {
-            var audience = request.ClientId ?? request.GoogleClientId;
-            var payload = await _googleValidator.ValidateAsync(request.IdToken!, audience: audience);
+            var configured = _providerSettings.GoogleClientId;
+            var audience = configured ?? (request.ClientId ?? request.GoogleClientId);
+            if (configured != null && (request.ClientId != null || request.GoogleClientId != null) && audience != configured)
+            {
+                var unauthorized = req.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorized.WriteAsJsonAsync(new { error = "Google audience mismatch." });
+                return unauthorized;
+            }
+            GoogleIdPayload? payload = null;
+            try
+            {
+                payload = await _googleValidator.ValidateAsync(request.IdToken!, audience: audience);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SignIn] Google validation exception: {ex.GetType().Name} {ex.Message}");
+            }
             if (payload is null)
             {
                 var unauthorized = req.CreateResponse(HttpStatusCode.Unauthorized);
@@ -72,11 +91,26 @@ public partial class AuthFunctions
             providerEmail = payload.Email ?? providerEmail;
         }
 
-        // If Microsoft and idToken provided, validate and extract user info
+        // If Microsoft and idToken provided, validate and extract user info; enforce expected audience if configured
         if (provider == AuthProvider.Microsoft && !string.IsNullOrWhiteSpace(request.IdToken))
         {
-            var audience = request.ClientId ?? request.MicrosoftClientId;
-            var payload = await _microsoftValidator.ValidateAsync(request.IdToken!, audience: audience);
+            var configured = _providerSettings.MicrosoftClientId;
+            var audience = configured ?? (request.ClientId ?? request.MicrosoftClientId);
+            if (configured != null && (request.ClientId != null || request.MicrosoftClientId != null) && audience != configured)
+            {
+                var unauthorized = req.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorized.WriteAsJsonAsync(new { error = "Microsoft audience mismatch." });
+                return unauthorized;
+            }
+            MicrosoftIdPayload? payload = null;
+            try
+            {
+                payload = await _microsoftValidator.ValidateAsync(request.IdToken!, audience: audience);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SignIn] Microsoft validation exception: {ex.GetType().Name} {ex.Message}");
+            }
             if (payload is null)
             {
                 var unauthorized = req.CreateResponse(HttpStatusCode.Unauthorized);

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getAuthClient } from '../../lib/authClient'
+import { fetchProviderIds, getEnvOrProvider, ProviderIds } from '../../lib/providerIds'
 
 declare global {
   interface Window {
@@ -28,6 +29,16 @@ export default function AuthDemo() {
   const client = getAuthClient()
   const [status, setStatus] = useState<string>('idle')
   const [profile, setProfile] = useState<any>(null)
+  const [providers, setProviders] = useState<ProviderIds | null>(null)
+
+  useEffect(() => {
+    const load = async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_FUNCTIONS_BASE_URL || 'http://localhost:7071'
+      const ids = await fetchProviderIds(baseUrl)
+      setProviders(ids)
+    }
+    load()
+  }, [])
 
   const signInDev = async () => {
     try {
@@ -45,7 +56,7 @@ export default function AuthDemo() {
     try {
       setStatus('loading Google SDK...')
       await loadScript('https://accounts.google.com/gsi/client', 'google-gis')
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+      const clientId = getEnvOrProvider(providers, 'google')
       if (!clientId) throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID')
 
       setStatus('requesting Google credential...')
@@ -88,7 +99,7 @@ export default function AuthDemo() {
     try {
       setStatus('loading Microsoft SDK...')
       await loadScript('https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js', 'msal-browser')
-      const clientId = process.env.NEXT_PUBLIC_MSAL_CLIENT_ID
+      const clientId = getEnvOrProvider(providers, 'microsoft')
       if (!clientId) throw new Error('Missing NEXT_PUBLIC_MSAL_CLIENT_ID')
 
       // Initialize MSAL app
@@ -117,7 +128,7 @@ export default function AuthDemo() {
       setStatus('loading Facebook SDK...')
       await loadScript('https://connect.facebook.net/en_US/sdk.js', 'facebook-jssdk')
 
-      const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
+      const appId = getEnvOrProvider(providers, 'facebook')
       if (!appId) throw new Error('Missing NEXT_PUBLIC_FACEBOOK_APP_ID')
 
       await new Promise<void>((resolve) => {
@@ -197,6 +208,7 @@ export default function AuthDemo() {
         <button className="px-3 py-2 rounded bg-gray-300" onClick={signOut}>Sign Out</button>
       </div>
       <div className="text-sm text-slate-600">Status: {status}</div>
+      <div className="text-xs text-slate-500">Loaded IDs: {providers ? JSON.stringify(providers) : 'loading...'}</div>
       <pre className="p-3 bg-slate-100 rounded text-xs overflow-x-auto">{JSON.stringify(profile, null, 2)}</pre>
     </div>
   )

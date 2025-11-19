@@ -12,6 +12,11 @@
     "Auth__Jwt__LifetimeMinutes": "60",
     "Auth__Refresh__LifetimeDays": "30",
     "Auth__Microsoft__AllowedTenants": ""
+    , "Auth__GoogleClientId": "417063975012-4k4t5km77ik828d2bc5clanavhj552o8.apps.googleusercontent.com"
+    ,"Auth_GoogleSecret":"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"
+    , "Auth__MicrosoftClientId": "dba12ed4-65bc-4745-8597-f149cf6d8db3"
+    , "Auth__MicrosoftTenantId": "03e3f942-887f-496d-aa3a-533cf21be112"
+    , "Auth__FacebookAppId": "YOUR_FACEBOOK_APP_ID"
   },
   "Host": {
     "CORS": "http://localhost:3000,http://localhost:3001",

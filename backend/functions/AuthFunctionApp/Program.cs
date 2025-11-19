@@ -19,8 +19,16 @@ var host = new HostBuilder()
 
         // Prefer colon-delimited keys (standard for .NET configuration),
         // but fall back to double-underscore env var style if present.
-        string? GetConfig(string colonKey, string underscoreKey) =>
-            configuration[colonKey] ?? configuration[underscoreKey];
+        string? GetConfig(string colonKey, string underscoreKey)
+        {
+            // Try direct env/application settings first
+            var direct = configuration[colonKey] ?? configuration[underscoreKey];
+            if (!string.IsNullOrWhiteSpace(direct)) return direct;
+            // Functions local.settings.json keeps values under the "Values" section
+            var valuesScoped = configuration[$"Values:{colonKey}"] ?? configuration[$"Values:{underscoreKey}"];
+            if (!string.IsNullOrWhiteSpace(valuesScoped)) return valuesScoped;
+            return null;
+        }
 
         var mongoConnection = GetConfig("Mongo:ConnectionString", "Mongo__ConnectionString") ?? string.Empty;
         var mongoDatabase = GetConfig("Mongo:Database", "Mongo__Database") ?? string.Empty;
@@ -41,6 +49,16 @@ var host = new HostBuilder()
         services.AddSingleton<IGoogleIdTokenValidator, GoogleIdTokenValidator>();
         services.AddSingleton<IMicrosoftIdTokenValidator, MicrosoftIdTokenValidator>();
         services.AddSingleton<IRefreshTokenService, RefreshTokenService>();
+
+        // Centralized provider client IDs (public identifiers, not secrets)
+        var authSettings = new AuthProviderSettings
+        {
+            GoogleClientId = GetConfig("Auth:GoogleClientId", "Auth__GoogleClientId"),
+            MicrosoftClientId = GetConfig("Auth:MicrosoftClientId", "Auth__MicrosoftClientId"),
+            FacebookAppId = GetConfig("Auth:FacebookAppId", "Auth__FacebookAppId")
+        };
+        Console.WriteLine($"[Startup] Provider IDs => Google='{authSettings.GoogleClientId ?? "(null)"}', Microsoft='{authSettings.MicrosoftClientId ?? "(null)"}', Facebook='{authSettings.FacebookAppId ?? "(null)"}'");
+        services.AddSingleton(authSettings);
     })
     .Build();
 
