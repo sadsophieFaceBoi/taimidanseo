@@ -11,7 +11,8 @@ local.settings.json
 .env
 .env.*
 !.env.example
-
+bin/
+obj/
 # editor
 .DS_Store
 .idea/
