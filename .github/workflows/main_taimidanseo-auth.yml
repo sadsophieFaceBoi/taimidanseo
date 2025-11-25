@@ -47,5 +47,6 @@ jobs:
         uses: Azure/functions-action@v1
         with:
           app-name: 'taimidanseo-auth'
-          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/publish'
-          
+          package: 'backend/functions/AuthFunctionApp/publish'
+          scm-do-build-during-deployment: false
+          enable-oryx-build: false
