@@ -44,7 +44,7 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6DA6BD5871CA45929F49F1C82F241D9D }}
 
       - name: Deploy to Azure Functions
-        uses: Azure/functions-action@v4
+        uses: Azure/functions-action@v1
         with:
           app-name: 'taimidanseo-auth'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/publish'
