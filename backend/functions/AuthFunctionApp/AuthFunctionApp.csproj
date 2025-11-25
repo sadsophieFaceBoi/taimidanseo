@@ -20,4 +20,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\common\Common.Users\Common.Users.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
