@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy dotnet core project to Azure Function App - taimidanseo-auth
 
 on:
@@ -10,33 +7,35 @@ on:
   workflow_dispatch:
 
 env:
-  # Path (from repo root) to the Azure Functions project
   AZURE_FUNCTIONAPP_PACKAGE_PATH: 'backend/functions/AuthFunctionApp'
-  DOTNET_VERSION: '8.0.x' # set this to the dotnet version to use
+  DOTNET_VERSION: '8.0.x'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
-      - name: 'Checkout GitHub Action'
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
-        uses: actions/setup-dotnet@v1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 'Resolve Project Dependencies Using Dotnet'
-        shell: bash
+      - name: Publish Azure Functions project
         run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          dotnet publish AuthFunctionApp.csproj --configuration Release --output ./output
-          popd
-      
+          dotnet publish ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/AuthFunctionApp.csproj \
+            --configuration Release \
+            --output ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/publish
+
+      - name: List publish output (debug)
+        run: |
+          ls -R '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/publish'
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -44,11 +43,9 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_64E9C648BBBD42499BD508F70AEB6F87 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6DA6BD5871CA45929F49F1C82F241D9D }}
 
-      - name: 'Run Azure Functions Action'
-        uses: Azure/functions-action@v1
-        id: fa
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v4
         with:
           app-name: 'taimidanseo-auth'
-          slot-name: 'Production'
-          package: '${{ github.workspace }}/backend/functions/AuthFunctionApp/output'
+          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/publish'
           
