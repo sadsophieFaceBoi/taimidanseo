@@ -27,12 +27,14 @@ export interface AuthClientOptions {
   baseUrl: string; // e.g. http://localhost:7071
   storage?: TokenStorage;
   fetchImpl?: typeof fetch;
+  apiKey?: string;
 }
 
 export class AuthClient {
   private baseUrl: string;
   private storage: TokenStorage;
   private fetchImpl: typeof fetch;
+  private apiKey?: string;
 
   constructor(opts: AuthClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/?$/, "");
@@ -41,6 +43,7 @@ export class AuthClient {
     const globalObj: any = typeof window !== "undefined" ? window : globalThis;
     const chosenFetch: any = (opts.fetchImpl ?? globalObj.fetch);
     this.fetchImpl = chosenFetch.bind(globalObj) as typeof fetch;
+    this.apiKey = opts.apiKey ?? resolveDefaultApiKey();
   }
 
   get tokens() { return this.storage.get() ?? {}; }
@@ -53,11 +56,16 @@ export class AuthClient {
     this.storage.clear();
   }
 
+  private buildHeaders(headers?: Record<string, string>): HeadersInit {
+    if (!this.apiKey) return headers ?? {};
+    return { "x-functions-key": this.apiKey, ...(headers ?? {}) };
+  }
+
   async signIn(input: SignInRequest): Promise<SignInResponse> {
     const url = `${this.baseUrl}/api/auth/signin`;
     const res = await this.fetchImpl(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: this.buildHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(input)
     });
     if (!res.ok) throw new Error(`SignIn failed: ${res.status}`);
@@ -71,7 +79,7 @@ export class AuthClient {
     const { accessToken } = this.tokens;
     if (!accessToken) throw new Error("No access token");
     const res = await this.fetchImpl(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: this.buildHeaders({ Authorization: `Bearer ${accessToken}` })
     });
     if (res.status === 401) throw new Error("Unauthorized");
     if (!res.ok) throw new Error(`Me failed: ${res.status}`);
@@ -95,7 +103,7 @@ export class AuthClient {
     const payload: RefreshRequest = { refreshToken };
     const res = await this.fetchImpl(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: this.buildHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error(`Refresh failed: ${res.status}`);
@@ -116,4 +124,16 @@ export class AuthClient {
   async signInWithFacebook(userId: string, email?: string) {
     return this.signIn({ provider: "Facebook", providerUserId: userId, providerEmail: email });
   }
+}
+
+function resolveDefaultApiKey(): string | undefined {
+  // Attempt to read the API key from common Next.js environment variable shapes.
+  const envSource: any = (typeof globalThis !== "undefined" && (globalThis as any)?.process?.env)
+    ? (globalThis as any).process.env
+    : undefined;
+  if (!envSource) return undefined;
+  return envSource.NEXT_PUBLIC_AUTH_API_KEY
+    ?? envSource.NEXT_AUTH_API_KEY
+    ?? envSource.NEXT_PUBLIC_FUNCTIONS_API_KEY
+    ?? envSource.FUNCTIONS_API_KEY;
 }

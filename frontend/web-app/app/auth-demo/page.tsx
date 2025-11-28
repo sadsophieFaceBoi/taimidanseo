@@ -4,31 +4,88 @@ import { useState, useEffect } from 'react'
 import { getAuthClient } from '../../lib/authClient'
 import { fetchProviderIds, getEnvOrProvider, ProviderIds } from '../../lib/providerIds'
 
-declare global {
-  interface Window {
-    google?: any
-    FB?: any
-    msal?: any
+const REDIRECT_STORAGE_KEY = 'auth-demo.redirect'
+
+type RedirectProvider = 'google' | 'microsoft' | 'facebook'
+
+interface RedirectState {
+  provider: RedirectProvider
+  state: string
+  nonce?: string
+  returnUrl?: string
+}
+
+interface DemoProfile {
+  userId: string
+  username: string
+  email?: string | null
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return 'unknown error'
+}
+
+function randomHex(bytes = 32) {
+  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
+    const arr = new Uint8Array(bytes)
+    window.crypto.getRandomValues(arr)
+    return Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('')
+  }
+  return Array.from({ length: bytes }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('')
+}
+
+function storeRedirectState(state: RedirectState) {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.setItem(REDIRECT_STORAGE_KEY, JSON.stringify(state))
+}
+
+function readRedirectState(): RedirectState | null {
+  if (typeof window === 'undefined') return null
+  const raw = window.sessionStorage.getItem(REDIRECT_STORAGE_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as RedirectState
+  } catch {
+    return null
   }
 }
 
-function loadScript(src: string, id: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (document.getElementById(id)) return resolve()
-    const s = document.createElement('script')
-    s.id = id
-    s.src = src
-    s.async = true
-    s.onload = () => resolve()
-    s.onerror = () => reject(new Error(`Failed to load ${src}`))
-    document.head.appendChild(s)
+function clearRedirectArtifacts(returnUrl?: string) {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.removeItem(REDIRECT_STORAGE_KEY)
+  if (returnUrl) {
+    window.history.replaceState(null, '', returnUrl)
+    return
+  }
+  const url = new URL(window.location.href)
+  url.hash = ''
+  url.searchParams.delete('state')
+  url.searchParams.delete('error')
+  url.searchParams.delete('error_description')
+  url.searchParams.delete('code')
+  const sanitized = url.pathname + (url.search ? url.search : '')
+  window.history.replaceState(null, '', sanitized)
+}
+
+function getCombinedParams() {
+  if (typeof window === 'undefined') return new URLSearchParams()
+  const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash
+  const hashParams = new URLSearchParams(hash)
+  const searchParams = new URLSearchParams(window.location.search)
+  const combined = new URLSearchParams()
+  hashParams.forEach((value, key) => combined.set(key, value))
+  searchParams.forEach((value, key) => {
+    if (!combined.has(key)) combined.set(key, value)
   })
+  return combined
 }
 
 export default function AuthDemo() {
   const client = getAuthClient()
   const [status, setStatus] = useState<string>('idle')
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<DemoProfile | null>(null)
   const [providers, setProviders] = useState<ProviderIds | null>(null)
 
   useEffect(() => {
@@ -40,131 +97,150 @@ export default function AuthDemo() {
     load()
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const stored = readRedirectState()
+    if (!stored) return
+
+    const params = getCombinedParams()
+    const returnedState = params.get('state')
+    const error = params.get('error') || params.get('error_description')
+
+    if (!returnedState || returnedState !== stored.state) {
+      clearRedirectArtifacts()
+      return
+    }
+
+    if (error) {
+      setStatus(`${stored.provider} redirect error: ${error}`)
+      clearRedirectArtifacts()
+      return
+    }
+
+    const run = async () => {
+      try {
+        if (stored.provider === 'google') {
+          const idToken = params.get('id_token')
+          if (!idToken) throw new Error('Missing Google id_token from redirect')
+          const clientId = getEnvOrProvider(providers, 'google')
+          if (!clientId) throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID')
+          setStatus('signing in with Google...')
+          const res = await client.signInWithGoogleIdToken(idToken, clientId)
+          setProfile({ userId: res.userId, username: res.username, email: res.email })
+          setStatus('signed in (Google)')
+        } else if (stored.provider === 'microsoft') {
+          const idToken = params.get('id_token')
+          if (!idToken) throw new Error('Missing Microsoft id_token from redirect')
+          const clientId = getEnvOrProvider(providers, 'microsoft')
+          if (!clientId) throw new Error('Missing NEXT_PUBLIC_MSAL_CLIENT_ID')
+          setStatus('signing in with Microsoft...')
+          const res = await client.signInWithMicrosoftIdToken(idToken, clientId)
+          setProfile({ userId: res.userId, username: res.username, email: res.email })
+          setStatus('signed in (Microsoft)')
+        } else if (stored.provider === 'facebook') {
+          const accessToken = params.get('access_token')
+          if (!accessToken) throw new Error('Missing Facebook access_token from redirect')
+          setStatus('fetching Facebook profile...')
+          const graphResp = await fetch(`https://graph.facebook.com/me?fields=id,email&access_token=${encodeURIComponent(accessToken)}`)
+          if (!graphResp.ok) throw new Error(`Facebook profile fetch failed: ${graphResp.status}`)
+          const graphData: { id: string; email?: string } = await graphResp.json()
+          if (!graphData.id) throw new Error('Facebook profile missing id')
+          setStatus('signing in with Facebook...')
+          const res = await client.signInWithFacebook(graphData.id, graphData.email)
+          setProfile({ userId: res.userId, username: res.username, email: res.email })
+          setStatus('signed in (Facebook)')
+        }
+      } catch (err: unknown) {
+        setStatus(`redirect error: ${getErrorMessage(err)}`)
+      } finally {
+        clearRedirectArtifacts(stored.returnUrl)
+      }
+    }
+
+    run()
+  }, [client, providers])
+
   const signInDev = async () => {
     try {
       setStatus('signing in (dev)...')
       const res = await client.signIn({ provider: 'Google', providerUserId: `dev_${Date.now()}` })
       setStatus('signed in')
       setProfile({ userId: res.userId, username: res.username, email: res.email })
-    } catch (e: any) {
-      setStatus(`error: ${e.message}`)
+    } catch (error: unknown) {
+      setStatus(`error: ${getErrorMessage(error)}`)
     }
   }
 
   // Google Sign-In via Google Identity Services (ID token)
   const signInWithGoogle = async () => {
     try {
-      setStatus('loading Google SDK...')
-      await loadScript('https://accounts.google.com/gsi/client', 'google-gis')
       const clientId = getEnvOrProvider(providers, 'google')
       if (!clientId) throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID')
-
-      setStatus('requesting Google credential...')
-      const idToken: string = await new Promise((resolve, reject) => {
-        if (!window.google?.accounts?.id) return reject(new Error('Google Identity not available'))
-        try {
-          window.google.accounts.id.initialize({
-            client_id: clientId,
-            callback: (resp: any) => {
-              if (resp?.credential) resolve(resp.credential)
-              else reject(new Error('No credential from Google'))
-            },
-            auto_select: false,
-          })
-          // Use a one-tap prompt; if suppressed, fall back to popup button flow
-          window.google.accounts.id.prompt((notification: any) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              // Render a temporary button and click it to ensure UI shows
-              const div = document.createElement('div')
-              document.body.appendChild(div)
-              window.google.accounts.id.renderButton(div, { theme: 'outline', size: 'large' })
-            }
-          })
-        } catch (err) {
-          reject(err)
-        }
-      })
-
-      setStatus('signing in with Google...')
-      const res = await client.signInWithGoogleIdToken(idToken, clientId)
-      setProfile({ userId: res.userId, username: res.username, email: res.email })
-      setStatus('signed in (Google)')
-    } catch (e: any) {
-      setStatus(`google error: ${e.message}`)
+      const redirectUri = window.location.origin
+      const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
+      const state = randomHex()
+      const nonce = randomHex()
+      storeRedirectState({ provider: 'google', state, nonce, returnUrl })
+      const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
+      authUrl.searchParams.set('client_id', clientId)
+      authUrl.searchParams.set('redirect_uri', redirectUri)
+      authUrl.searchParams.set('response_type', 'id_token')
+      authUrl.searchParams.set('scope', 'openid email profile')
+      authUrl.searchParams.set('state', state)
+      authUrl.searchParams.set('nonce', nonce)
+      authUrl.searchParams.set('prompt', 'select_account')
+      setStatus('redirecting to Google...')
+      window.location.assign(authUrl.toString())
+    } catch (error: unknown) {
+      setStatus(`google error: ${getErrorMessage(error)}`)
     }
   }
 
   // Microsoft Sign-In via MSAL (ID token)
   const signInWithMicrosoft = async () => {
     try {
-      setStatus('loading Microsoft SDK...')
-      await loadScript('https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js', 'msal-browser')
       const clientId = getEnvOrProvider(providers, 'microsoft')
       if (!clientId) throw new Error('Missing NEXT_PUBLIC_MSAL_CLIENT_ID')
-
-      // Initialize MSAL app
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const PublicClientApplication = (window as any).msal?.PublicClientApplication
-      if (!PublicClientApplication) throw new Error('MSAL not available')
-      const msalApp = new PublicClientApplication({ auth: { clientId } })
-
-      setStatus('Microsoft login popup...')
-      const loginResp = await msalApp.loginPopup({ scopes: ['openid', 'profile', 'email'] })
-      const idToken: string | undefined = loginResp?.idToken
-      if (!idToken) throw new Error('No idToken from Microsoft')
-
-      setStatus('signing in with Microsoft...')
-      const res = await client.signInWithMicrosoftIdToken(idToken, clientId)
-      setProfile({ userId: res.userId, username: res.username, email: res.email })
-      setStatus('signed in (Microsoft)')
-    } catch (e: any) {
-      setStatus(`microsoft error: ${e.message}`)
+      const redirectUri = `${window.location.origin}${window.location.pathname}`
+      const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
+      const state = randomHex()
+      const nonce = randomHex()
+      storeRedirectState({ provider: 'microsoft', state, nonce, returnUrl })
+      const authUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')
+      authUrl.searchParams.set('client_id', clientId)
+      authUrl.searchParams.set('redirect_uri', redirectUri)
+      authUrl.searchParams.set('response_type', 'id_token')
+      authUrl.searchParams.set('response_mode', 'fragment')
+      authUrl.searchParams.set('scope', 'openid profile email')
+      authUrl.searchParams.set('state', state)
+      authUrl.searchParams.set('nonce', nonce)
+      authUrl.searchParams.set('prompt', 'select_account')
+      setStatus('redirecting to Microsoft...')
+      window.location.assign(authUrl.toString())
+    } catch (error: unknown) {
+      setStatus(`microsoft error: ${getErrorMessage(error)}`)
     }
   }
 
   // Facebook Sign-In via Facebook SDK (use provider user id + email)
   const signInWithFacebook = async () => {
     try {
-      setStatus('loading Facebook SDK...')
-      await loadScript('https://connect.facebook.net/en_US/sdk.js', 'facebook-jssdk')
-
       const appId = getEnvOrProvider(providers, 'facebook')
       if (!appId) throw new Error('Missing NEXT_PUBLIC_FACEBOOK_APP_ID')
-
-      await new Promise<void>((resolve) => {
-        if (window.FB?.init) return resolve()
-        ;(window as any).fbAsyncInit = function () {
-          window.FB!.init({ appId, cookie: true, xfbml: false, version: 'v19.0' })
-          resolve()
-        }
-        // If SDK already loaded and provided FB, init immediately
-        if (window.FB) {
-          window.FB.init({ appId, cookie: true, xfbml: false, version: 'v19.0' })
-          resolve()
-        }
-      })
-
-      setStatus('Facebook login popup...')
-      const authResponse = await new Promise<any>((resolve, reject) => {
-        window.FB!.login((resp: any) => {
-          if (resp?.authResponse) resolve(resp.authResponse)
-          else reject(new Error('Facebook login failed or cancelled'))
-        }, { scope: 'email' })
-      })
-
-      const me = await new Promise<{ id: string; email?: string }>((resolve, reject) => {
-        window.FB!.api('/me', { fields: 'id,name,email' }, (resp: any) => {
-          if (resp?.id) resolve({ id: resp.id, email: resp.email })
-          else reject(new Error('Failed to fetch Facebook profile'))
-        })
-      })
-
-      setStatus('signing in with Facebook...')
-      const res = await client.signInWithFacebook(me.id, me.email)
-      setProfile({ userId: res.userId, username: res.username, email: res.email })
-      setStatus('signed in (Facebook)')
-    } catch (e: any) {
-      setStatus(`facebook error: ${e.message}`)
+      const redirectUri = `${window.location.origin}${window.location.pathname}`
+      const returnUrl = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
+      const state = randomHex()
+      storeRedirectState({ provider: 'facebook', state, returnUrl })
+      const authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth')
+      authUrl.searchParams.set('client_id', appId)
+      authUrl.searchParams.set('redirect_uri', redirectUri)
+      authUrl.searchParams.set('state', state)
+      authUrl.searchParams.set('response_type', 'token')
+      authUrl.searchParams.set('scope', 'email')
+      setStatus('redirecting to Facebook...')
+      window.location.assign(authUrl.toString())
+    } catch (error: unknown) {
+      setStatus(`facebook error: ${getErrorMessage(error)}`)
     }
   }
 
@@ -174,8 +250,8 @@ export default function AuthDemo() {
       const me = await client.me()
       setProfile(me)
       setStatus('profile loaded')
-    } catch (e: any) {
-      setStatus(`error: ${e.message}`)
+    } catch (error: unknown) {
+      setStatus(`error: ${getErrorMessage(error)}`)
     }
   }
 
@@ -184,8 +260,8 @@ export default function AuthDemo() {
       setStatus('refreshing...')
       await client.refresh()
       setStatus('refreshed')
-    } catch (e: any) {
-      setStatus(`error: ${e.message}`)
+    } catch (error: unknown) {
+      setStatus(`error: ${getErrorMessage(error)}`)
     }
   }
 
