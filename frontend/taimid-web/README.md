@@ -34,23 +34,3 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Auth Setup
-
-Create a `.env.local` in `web-app/` with your credentials:
-
-```
-NEXT_PUBLIC_FUNCTIONS_BASE_URL=http://localhost:7071
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-oauth-client-id
-NEXT_PUBLIC_MSAL_CLIENT_ID=your-entra-app-client-id
-NEXT_PUBLIC_FACEBOOK_APP_ID=your-facebook-app-id
-```
-
-Run the backend Azure Functions locally (from the repo root or via VS Code task `start:functions`), then start the web app:
-
-```powershell
-cd frontend
-npm run dev
-```
-
-Open `/auth-demo` to try Google, Microsoft, and Facebook sign-in.
