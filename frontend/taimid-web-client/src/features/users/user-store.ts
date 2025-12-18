@@ -32,3 +32,35 @@ export const useUserStore = create<UserStore>()(
         },
     ),
 );
+ 
+export async function waitForUserStoreReady(): Promise<void> {
+    const persistApi = useUserStore.persist;
+
+    if (!persistApi || persistApi.hasHydrated() || !storage) {
+        return;
+    }
+
+    await new Promise<void>((resolve) => {
+        const unsub = persistApi.onFinishHydration(() => {
+            resolve();
+            unsub();
+        });
+
+        if (persistApi.hasHydrated()) {
+            resolve();
+            unsub();
+            return;
+        }
+
+        void persistApi.rehydrate();
+    });
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+    await waitForUserStoreReady();
+    return useUserStore.getState().currentUser;
+}
+
+export async function checkUserExists(): Promise<boolean> {
+    return (await getCurrentUser()) !== null;
+}

@@ -1,7 +1,9 @@
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
+import { UserCreator, UserHeaderDisplay } from "taimidanseo/features/users/components/user-creator-component";
+import { useUserStore } from "taimidanseo/features/users/user-store";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -27,6 +29,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <header className="text-white"><UserHeaderDisplay /></header>
+        <UserCreator />
         {children}
       </body>
     </html>
