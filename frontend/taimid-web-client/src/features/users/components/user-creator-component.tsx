@@ -82,5 +82,5 @@ export const UserCreator = () => {
 //component to display current user name in header
 export const UserHeaderDisplay = () => {
     const currentUser = useUserStore((state) => state.currentUser);
-    return <header className="text-white">Hello {currentUser?.name}</header>;
+    return <header className="text-white w-full">Hello {currentUser?.name}</header>;
 };

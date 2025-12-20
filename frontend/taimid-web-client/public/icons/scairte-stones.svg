@@ -1,0 +1,31 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="stoneBase" x1="10" y1="48" x2="64" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#357de2ff"/>
+      <stop offset="1" stop-color="#abc4e6ff"/>
+    </linearGradient>
+    <linearGradient id="stoneMid" x1="16" y1="32" x2="48" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#084aceff"/>
+      <stop offset="1" stop-color="#7b95caff"/>
+    </linearGradient>
+    <linearGradient id="stoneTop" x1="22" y1="18" x2="42" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3a5d99ff"/>
+      <stop offset="1" stop-color="rgba(164, 177, 195, 1)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ground shadow -->
+  <ellipse cx="32" cy="54" rx="18" ry="4" fill="#2e3033ff" fill-opacity="0.15"/>
+
+  <!-- Base stone -->
+  <path d="M10 44C14 40 22 38 32 38C42 38 50 40 54 44C56 46 56 50 54 52C50 56 42 58 32 58C22 58 14 56 10 52C8 50 8 46 10 44Z" fill="url(#stoneBase)"/>
+
+  <!-- Middle stone -->
+  <path d="M16 32C19 29 24 28 32 28C40 28 45 29 48 32C50 34 50 37 48 39C45 42 40 44 32 44C24 44 19 42 16 39C14 37 14 34 16 32Z" fill="url(#stoneMid)"/>
+
+  <!-- Top stone -->
+  <path d="M22 20C24 18 27 17 32 17C37 17 40 18 42 20C43.5 21.5 43.5 24 42 25.5C40 27.5 37 29 32 29C27 29 24 27.5 22 25.5C20.5 24 20.5 21.5 22 20Z" fill="url(#stoneTop)"/>
+
+  <!-- Small highlight on top stone -->
+  <path d="M26 21.5C27 20.8 28.5 20.5 30.5 20.5" stroke="#faf8f3ff" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.8"/>
+</svg>

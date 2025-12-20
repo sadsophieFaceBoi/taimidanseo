@@ -2,6 +2,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCrosshairs, faComments, faClock } from '@fortawesome/free-solid-svg-icons';
 import { useUserStore, waitForUserStoreReady } from 'taimidanseo/features/users/user-store';
 import { SpeakingSession } from 'taimidanseo/features/language-sessions/speaking-session-models';
 import {useSpeakingSessionStore} from 'taimidanseo/features/language-sessions/speaking-session-store';
@@ -10,7 +12,8 @@ import { SessionCreator } from 'taimidanseo/features/language-sessions/component
 
 const containerStyle = {
     width: '100%',
-    height: '400px',
+    height: '40rem',
+    borderRadius: '16px',
 };  
 
 const defaultCenter = {
@@ -85,24 +88,14 @@ export const GoogleMapComponent: React.FC = () => {
 
     //display a google map with markers for active sessions
     return (
-        <div style={{ width: '100%' }}>
+        <div className='w-full '>
             <div
-                style={{
-                    marginBottom: '12px',
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                }}
+                className=' flex justify-start'
+              
             >
                 <div
-                    style={{
-                        display: 'inline-flex',
-                        gap: '8px',
-                        padding: '6px 10px',
-                        borderRadius: 999,
-                        backgroundColor: 'rgba(255,255,255,0.9)',
-                        boxShadow: '0 2px 8px rgba(15,23,42,0.15)',
-                        alignItems: 'center',
-                    }}
+                    className='inline-flex gap-2  bg-white bg-opacity-90 shadow-md w-full items-center justify-center'
+                  
                 >
                 <button
                     type="button"
@@ -110,35 +103,10 @@ export const GoogleMapComponent: React.FC = () => {
                         setInteractionMode((prev) => (prev === 'setLocation' ? 'none' : 'setLocation'))
                     }
                     title="Set my location by clicking on the map"
-                    style={{
-                        border: 'none',
-                        cursor: 'pointer',
-                        borderRadius: 999,
-                        padding: '6px 10px',
-                        backgroundColor:
-                            interactionMode === 'setLocation' ? '#2563eb' : 'transparent',
-                        color: interactionMode === 'setLocation' ? '#ffffff' : '#0f172a',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minWidth: 32,
-                    }}
+                    className='bg-none border-0 cursor-pointer rounded-full p-2'
+                    
                 >
-                    <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
-                        <path
-                            d="M12 2V5M12 19V22M4 12H7M17 12H20"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                        />
-                    </svg>
+                    <FontAwesomeIcon icon={faCrosshairs} className="text-slate-900" />
                 </button>
                 <button
                     type="button"
@@ -160,21 +128,7 @@ export const GoogleMapComponent: React.FC = () => {
                         minWidth: 32,
                     }}
                 >
-                    <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            d="M5 20V6C5 4.89543 5.89543 4 7 4H17C18.1046 4 19 4.89543 19 6V20L15 17L12 19L9 17L5 20Z"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
+                    <FontAwesomeIcon icon={faComments} />
                 </button>
                 <button
                     type="button"
@@ -196,98 +150,78 @@ export const GoogleMapComponent: React.FC = () => {
                         minWidth: 32,
                     }}
                 >
-                    <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            d="M12 8V12L15 15"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                        <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="2" />
-                    </svg>
+                    <FontAwesomeIcon icon={faClock} />
                 </button>
                 </div>
             </div>
 
-            <LoadScript
-                googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}
-                libraries={['places']}
-            >
-                <GoogleMap
-                    mapContainerStyle={containerStyle}
-                    center={userLocation || defaultCenter}
-                    zoom={12}
-                    onClick={handleMapClick}
-                    options={{
-                        streetViewControl: false,
-                        mapTypeControl: false,
-                    }}
+            <div className='p-2'>
+                <LoadScript
+                    googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}
+                    libraries={['places']}
                 >
-                {/* User's current location marker */}
-                {userLocation && (
-                    <Marker
-                        position={userLocation}
-                        title={locationSetManually ? 'Your Location (Set Manually)' : 'Your Location'}
-                        icon={{
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
-                            fillColor: locationSetManually ? '#FF6B6B' : '#4285F4',
-                            fillOpacity: 1,
-                            strokeColor: '#FFFFFF',
-                            strokeWeight: 2,
+                    <GoogleMap
+                        mapContainerStyle={containerStyle}
+                        center={userLocation || defaultCenter}
+                        zoom={12}
+                        onClick={handleMapClick}
+                        options={{
+                            streetViewControl: false,
+                            mapTypeControl: false,
                         }}
-                    />
-                )}
-
-                {/* New current session marker (draft) */}
-                {currentSessionLocation && (
-                    <Marker
-                        position={currentSessionLocation}
-                        title="New current speaking session"
-                        icon={{
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
-                            fillColor: '#34A853', // green
-                            fillOpacity: 1,
-                            strokeColor: '#FFFFFF',
-                            strokeWeight: 2,
-                        }}
-                    />
-                )}
-
-                {/* New future session marker (draft) */}
-                {futureSessionLocation && (
-                    <Marker
-                        position={futureSessionLocation}
-                        title="New future speaking session"
-                        icon={{
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
-                            fillColor: '#FBBC05', // yellow/orange
-                            fillOpacity: 1,
-                            strokeColor: '#FFFFFF',
-                            strokeWeight: 2,
-                        }}
-                    />
-                )}
-
-                {/* Active session markers */}
-                {activeSessions.map((session) => (
-                    <Marker
-                        key={session.id}
-                        position={{ lat: session.latitude, lng: session.longitude }}
-                        title={session.locationName}
-                    />
-                ))}
-                </GoogleMap>
-            </LoadScript>
+                    >
+                    {/* User's current location marker */}
+                    {userLocation && (
+                        <Marker
+                            position={userLocation}
+                            title={locationSetManually ? 'Your Location (Set Manually)' : 'Your Location'}
+                            icon={{
+                                url: '/icons/scairte-stones.svg',
+                                scaledSize: new google.maps.Size(28, 28),
+                                anchor: new google.maps.Point(14, 28),
+                            }}
+                        />
+                    )}
+                    {/* New current session marker (draft) */}
+                    {currentSessionLocation && (
+                        <Marker
+                            position={currentSessionLocation}
+                            title="New current speaking session"
+                            icon={{
+                                url: '/icons/scairte-stones.svg',
+                                scaledSize: new google.maps.Size(40, 40),
+                                anchor: new google.maps.Point(20, 40),
+                            }}
+                        />
+                    )}
+                    {/* New future session marker (draft) */}
+                    {futureSessionLocation && (
+                        <Marker
+                            position={futureSessionLocation}
+                            title="New future speaking session"
+                            icon={{
+                                url: '/icons/scairte-stones.svg',
+                                scaledSize: new google.maps.Size(40, 40),
+                                anchor: new google.maps.Point(20, 40),
+                            }}
+                        />
+                    )}
+                    {/* Active session markers */}
+                    {activeSessions.map((session) => (
+                        <Marker
+                            key={session.id}
+                            position={{ lat: session.latitude, lng: session.longitude }}
+                            title={session.locationName}
+                            icon={{
+                                url: '/icons/scairte-stones.svg',
+                                scaledSize: new google.maps.Size(40, 40),
+                                anchor: new google.maps.Point(20, 40),
+                            }}
+                        />
+                    ))}
+                    </GoogleMap>
+                </LoadScript>
+            </div>
 
             {(() => {
                 const draftLocation =
